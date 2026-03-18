@@ -1,96 +1,100 @@
-import { loadSubtlexMap } from "./subtlexLoader";
-import type { EssayAnalysis, HistogramBin, SentencePoint } from "./types";
+export type HistogramBin = {
+  start: number;
+  end: number;
+  count: number;
+  label: string;
+};
 
-function round(value: number, digits = 2): number {
-  const factor = 10 ** digits;
-  return Math.round(value * factor) / factor;
+const PROTECTED_PERIOD = "\uE000";
+
+function protectAcronymPeriods(text: string): string {
+  return text.replace(/\b(?:[A-Z]\.){2,}(?=\s+[A-Za-z])/g, (match) =>
+    match.replace(/\./g, PROTECTED_PERIOD)
+  );
 }
 
-function isHeadingLine(line: string): boolean {
-  const trimmed = line.trim();
-
-  if (!trimmed) return true;
-
-  if (/^(by\s+[A-Z][A-Za-z.\-'\s]+)$/i.test(trimmed)) return true;
-  if (/^(preface|introduction|contents)$/i.test(trimmed)) return true;
-  if (/^chapter\s+[ivxlcdm]+\b.*$/i.test(trimmed)) return true;
-  if (/^\d{4}$/.test(trimmed)) return true;
-
-  if (
-    trimmed.length <= 120 &&
-    /[A-Z]/.test(trimmed) &&
-    trimmed === trimmed.toUpperCase() &&
-    !/[!?]$/.test(trimmed)
-  ) {
-    return true;
-  }
-
-  return false;
+function protectSingleInitials(text: string): string {
+  return text
+    // G. E. Moore
+    .replace(/\b([A-Z])\.(?=\s+[A-Z]\.)/g, `$1${PROTECTED_PERIOD}`)
+    // G. Moore
+    .replace(/\b([A-Z])\.(?=\s+[A-Z][a-z])/g, `$1${PROTECTED_PERIOD}`);
 }
 
+function protectCommonAbbreviations(text: string): string {
+  return text
+    // Dr. Smith / Mr. Brown / Prof. Jones
+    .replace(
+      /\b(Mr|Mrs|Ms|Dr|Prof|Sr|Jr|St)\.(?=\s+[A-Z])/g,
+      `$1${PROTECTED_PERIOD}`
+    )
+    // etc. / vs. / cf. / fig. / eq. / no. / al. / inc. / ltd.
+    .replace(
+      /\b(etc|vs|cf|fig|eq|no|al|inc|ltd)\.(?=\s+[A-Za-z])/gi,
+      (_match, p1: string) => `${p1}${PROTECTED_PERIOD}`
+    )
+    // e.g. / i.e.
+    .replace(/\be\.g\./gi, `e${PROTECTED_PERIOD}g${PROTECTED_PERIOD}`)
+    .replace(/\bi\.e\./gi, `i${PROTECTED_PERIOD}e${PROTECTED_PERIOD}`)
+    // Ph.D. / M.A. / B.Sc. などの degree-ish なもの
+    .replace(/\b(?:[A-Za-z]{1,4}\.){2,}(?=\s+[A-Za-z])/g, (match) =>
+      match.replace(/\./g, PROTECTED_PERIOD)
+    );
+}
 
-function isHeadingParagraph(paragraph: string): boolean {
-  const trimmed = paragraph.trim();
+function protectDecimalPeriods(text: string): string {
+  return text.replace(/(\d)\.(\d)/g, `$1${PROTECTED_PERIOD}$2`);
+}
 
-  if (!trimmed) return true;
-
-  if (/^(by\s+[A-Z][A-Za-z.\-'\s]+)$/i.test(trimmed)) return true;
-  if (/^(preface|introduction|contents)$/i.test(trimmed)) return true;
-  if (/^chapter\s+[ivxlcdm]+\b.*$/i.test(trimmed)) return true;
-  if (/^\d{4}$/.test(trimmed)) return true;
-
-  if (
-    trimmed.length <= 120 &&
-    /[A-Z]/.test(trimmed) &&
-    trimmed === trimmed.toUpperCase() &&
-    !/\.$/.test(trimmed)
-  ) {
-    return true;
-  }
-
-  return false;
+function protectEllipses(text: string): string {
+  return text.replace(/\.{3,}/g, (match) =>
+    match.replace(/\./g, PROTECTED_PERIOD)
+  );
 }
 
 function protectNonTerminalPeriods(text: string): string {
-  return text
-    // G. E. Moore / J. M. Keynes
-    .replace(/\b([A-Z])\.(?=\s+[A-Z]\.)/g, "$1∯")
-    .replace(/\b([A-Z])\.(?=\s+[A-Z][a-z])/g, "$1∯")
+  return [
+    protectEllipses,
+    protectDecimalPeriods,
+    protectAcronymPeriods,
+    protectSingleInitials,
+    protectCommonAbbreviations
+  ].reduce((acc, fn) => fn(acc), text);
+}
 
-    // Common abbreviations
-    .replace(/\b(Mr|Mrs|Ms|Dr|Prof|Sr|Jr|St|etc|vs)\.(?=\s)/g, "$1∯")
-    .replace(/\b(e\.g|i\.e|cf)\.(?=\s)/gi, (m) => m.replace(/\./g, "∯"));
+function restoreProtectedPeriods(text: string): string {
+  return text.replace(new RegExp(PROTECTED_PERIOD, "g"), ".");
+}
+
+function normalizeParagraph(paragraph: string): string {
+  return paragraph
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export function splitIntoSentences(text: string): string[] {
   const paragraphs = text
     .replace(/\r/g, "")
-    .split(/\n\s*\n+/) 
-    .map((paragraph) =>
-      paragraph
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean)
-        .join(" ")
-        .replace(/\s+/g, " ")
-        .trim()
-    )
-    .filter(Boolean)
-    .filter((paragraph) => !isHeadingParagraph(paragraph));
+    .split(/\n\s*\n+/)
+    .map(normalizeParagraph)
+    .filter(Boolean);
 
   const sentences: string[] = [];
 
   for (const paragraph of paragraphs) {
     const protectedParagraph = protectNonTerminalPeriods(paragraph);
-
     const parts =
-      protectedParagraph.match(/[^.]+(?:\.|$)/g)?.map((part) =>
-        part.replace(/∯/g, ".").trim()
-      ) ?? [];
+      protectedParagraph.match(/[^.]+(?:\.|$)/g)?.map((part) => part.trim()) ??
+      [];
 
     for (const part of parts) {
-      if (part) {
-        sentences.push(part);
+      const restored = restoreProtectedPeriods(part).trim();
+      if (restored) {
+        sentences.push(restored);
       }
     }
   }
@@ -101,21 +105,20 @@ export function splitIntoSentences(text: string): string[] {
 export function tokenizeSentence(sentence: string): string[] {
   return sentence
     .toLowerCase()
-    .match(/[a-z]+(?:'[a-z]+)?/g)
-    ?.map((token) => token.trim())
-    .filter(Boolean) ?? [];
+    .replace(/[“”‘’]/g, "'")
+    .match(/[a-z]+(?:'[a-z]+)?/g) ?? [];
 }
 
-function difficultyFromZipf(zipf: number | undefined): number {
-  if (typeof zipf !== "number" || !Number.isFinite(zipf)) {
-    return 7.5;
-  }
-
-  return round(Math.min(8, Math.max(1, 8 - zipf)));
+export function average(values: number[]): number {
+  if (values.length === 0) return 0;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
-export function buildHistogram(values: number[], binCount = 10): HistogramBin[] {
-  if (!values.length) {
+export function buildHistogram(
+  values: number[],
+  binCount = 10
+): HistogramBin[] {
+  if (values.length === 0 || binCount <= 0) {
     return [];
   }
 
@@ -123,80 +126,35 @@ export function buildHistogram(values: number[], binCount = 10): HistogramBin[] 
   const max = Math.max(...values);
 
   if (min === max) {
-    return [{ start: min, end: max, count: values.length }];
+    return [
+      {
+        start: min,
+        end: max,
+        count: values.length,
+        label: `${min}`
+      }
+    ];
   }
 
   const width = (max - min) / binCount;
-  const bins: HistogramBin[] = Array.from({ length: binCount }, (_, index) => ({
-    start: min + width * index,
-    end: index === binCount - 1 ? max : min + width * (index + 1),
-    count: 0
-  }));
 
-  for (const value of values) {
-    const rawIndex = Math.floor((value - min) / width);
-    const safeIndex = Math.min(binCount - 1, Math.max(0, rawIndex));
-    bins[safeIndex].count += 1;
-  }
-
-  return bins;
-}
-
-export async function analyzeEssay(text: string): Promise<EssayAnalysis> {
-  const { map, dictionaryName, usedFallbackDictionary } = await loadSubtlexMap();
-  const sentences = splitIntoSentences(text);
-
-  const points: SentencePoint[] = sentences.map((sentence, index) => {
-    const words = tokenizeSentence(sentence);
-    const uniqueWordCount = new Set(words).size;
-
-    const zipfScores = words.map((word) => map[word]);
-    const knownScores = zipfScores.filter((score): score is number => typeof score === "number");
-    const averageZipf =
-      knownScores.length > 0
-        ? knownScores.reduce((sum, score) => sum + score, 0) / knownScores.length
-        : 0;
-
-    const difficultyScores = words.map((word) => difficultyFromZipf(map[word]));
-    const averageDifficulty =
-      difficultyScores.length > 0
-        ? difficultyScores.reduce((sum, score) => sum + score, 0) / difficultyScores.length
-        : 0;
-
-    const unknownWordCount = words.filter((word) => typeof map[word] !== "number").length;
+  const bins: HistogramBin[] = Array.from({ length: binCount }, (_, index) => {
+    const start = min + index * width;
+    const end = index === binCount - 1 ? max : start + width;
 
     return {
-      id: index + 1,
-      sentence,
-      words,
-      uniqueWordCount,
-      wordCount: words.length,
-      averageDifficulty: round(averageDifficulty),
-      averageZipf: round(averageZipf),
-      unknownWordCount
+      start,
+      end,
+      count: 0,
+      label: `${start.toFixed(1)}–${end.toFixed(1)}`
     };
   });
 
-  const wordCounts = points.map((point) => point.wordCount);
-  const difficulties = points.map((point) => point.averageDifficulty);
+  for (const value of values) {
+    const rawIndex = Math.floor((value - min) / width);
+    const index = Math.min(Math.max(rawIndex, 0), binCount - 1);
+    bins[index].count += 1;
+  }
 
-  const totalWords = points.reduce((sum, point) => sum + point.wordCount, 0);
-  const totalUnknownWords = points.reduce((sum, point) => sum + point.unknownWordCount, 0);
-
-  return {
-    sentences: points,
-    xBins: buildHistogram(wordCounts, 10),
-    yBins: buildHistogram(difficulties, 10),
-    dictionaryName,
-    usedFallbackDictionary,
-    unknownRate: totalWords ? round((totalUnknownWords / totalWords) * 100) : 0,
-    summary: {
-      sentenceCount: points.length,
-      totalWords,
-      averageSentenceLength: points.length ? round(totalWords / points.length) : 0,
-      averageSentenceDifficulty: points.length
-        ? round(points.reduce((sum, point) => sum + point.averageDifficulty, 0) / points.length)
-        : 0
-    }
-  };
+  return bins;
 }
