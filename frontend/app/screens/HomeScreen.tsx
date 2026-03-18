@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  Pressable,
   ScrollView,
   Text,
   useWindowDimensions,
@@ -15,9 +14,6 @@ import { loadSampleEssayText } from "../lib/analysis/sampleEssay";
 import { analyzeEssay } from "../lib/analysis/text";
 import type { EssayAnalysis } from "../lib/analysis/types";
 import { CHART_COLORS } from "../lib/constants";
-
-type ChartMode = "scatter" | "heatmap" | "contour";
-
 export default function HomeScreen() {
   const { width } = useWindowDimensions();
   const chartWidth = Math.max(320, Math.min(width - 96, 980));
@@ -25,7 +21,6 @@ export default function HomeScreen() {
   const [analysis, setAnalysis] = useState<EssayAnalysis | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [chartMode, setChartMode] = useState<ChartMode>("contour");
 
   const handleLoadSample = async () => {
     try {
@@ -136,46 +131,12 @@ export default function HomeScreen() {
             ))}
           </View>
 
-          <InfoCard title="Chart mode">
-            <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
-              {(["contour", "heatmap", "scatter"] as ChartMode[]).map((mode) => {
-                const active = chartMode === mode;
-                return (
-                  <Pressable
-                    key={mode}
-                    onPress={() => setChartMode(mode)}
-                    style={{
-                      paddingHorizontal: 14,
-                      paddingVertical: 10,
-                      borderRadius: 999,
-                      borderWidth: 1,
-                      borderColor: active ? CHART_COLORS.histogramStroke : CHART_COLORS.cardBorder,
-                      backgroundColor: active ? "#f7d7f7" : "#ffffff"
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 13,
-                        fontWeight: "700",
-                        color: active ? CHART_COLORS.histogramStroke : CHART_COLORS.bodyText,
-                        textTransform: "capitalize"
-                      }}
-                    >
-                      {mode}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </InfoCard>
-
           <JointDistributionChart
             points={analysis.sentences}
             xBins={analysis.xBins}
             yBins={analysis.yBins}
             width={chartWidth}
             height={620}
-            mode={chartMode}
           />
 
           <SentenceTable sentences={analysis.sentences} />

@@ -3,15 +3,12 @@ import { Platform, Text, View } from "react-native";
 import type { HistogramBin, SentencePoint } from "../lib/analysis/types";
 import { CHART_COLORS } from "../lib/constants";
 
-type ChartMode = "scatter" | "heatmap" | "contour";
-
 type JointDistributionChartProps = {
   points: SentencePoint[];
   xBins: HistogramBin[];
   yBins: HistogramBin[];
   width: number;
   height: number;
-  mode?: ChartMode;
 };
 
 type PlotlyLike = {
@@ -47,7 +44,7 @@ function axisRange(bins: HistogramBin[], values: number[], paddingRatio = 0.04) 
   return [min - pad, max + pad];
 }
 
-function buildPlotlyFigure(points: SentencePoint[], xBins: HistogramBin[], yBins: HistogramBin[], mode: ChartMode) {
+function buildPlotlyFigure(points: SentencePoint[], xBins: HistogramBin[], yBins: HistogramBin[]) {
   const xValues = points.map((point) => point.wordCount);
   const yValues = points.map((point) => point.averageDifficulty);
   const previews = points.map((point) => sentencePreview(point.sentence));
@@ -72,9 +69,9 @@ function buildPlotlyFigure(points: SentencePoint[], xBins: HistogramBin[], yBins
     yaxis: "y2",
     nbinsx: Math.max(6, xBins.length),
     marker: {
-      color: CHART_COLORS.histogramFill,
+      color: "#2c7bb6",
       line: {
-        color: CHART_COLORS.histogramStroke,
+        color: "#1d5d8f",
         width: 1
       }
     },
@@ -96,9 +93,9 @@ function buildPlotlyFigure(points: SentencePoint[], xBins: HistogramBin[], yBins
     yaxis: "y3",
     nbinsy: Math.max(6, yBins.length),
     marker: {
-      color: CHART_COLORS.histogramFill,
+      color: "#d7191c",
       line: {
-        color: CHART_COLORS.histogramStroke,
+        color: "#a50f15",
         width: 1
       }
     },
@@ -113,127 +110,58 @@ function buildPlotlyFigure(points: SentencePoint[], xBins: HistogramBin[], yBins
     showlegend: false
   };
 
-  const centerTrace =
-    mode === "scatter"
-      ? {
-          type: "scattergl",
-          mode: "markers",
-          x: xValues,
-          y: yValues,
-          xaxis: "x",
-          yaxis: "y",
-          text: previews,
-          customdata: sharedHover,
-          marker: {
-            size: 11,
-            color: CHART_COLORS.pointFill,
-            line: {
-              color: CHART_COLORS.pointStroke,
-              width: 1.4
-            },
-            opacity: 0.88
-          },
-          hovertemplate: [
-            "<b>%{text}</b>",
-            "Words: %{customdata[1]}",
-            "Unique words: %{customdata[2]}",
-            "Average difficulty: %{customdata[3]:.2f}",
-            "Average Zipf: %{customdata[4]:.2f}",
-            "Unknown words: %{customdata[5]}",
-            "<extra></extra>"
-          ].join("<br>"),
-          showlegend: false
-        }
-      : mode === "heatmap"
-        ? {
-            type: "histogram2d",
-            x: xValues,
-            y: yValues,
-            xaxis: "x",
-            yaxis: "y",
-            autobinx: false,
-            autobiny: false,
-            xbins: {
-              start: xRange[0],
-              end: xRange[1],
-              size: xBinSize
-            },
-            ybins: {
-              start: yRange[0],
-              end: yRange[1],
-              size: yBinSize
-            },
-            colorscale: [
-              [0, "#fff0fb"],
-              [0.25, "#f8c6ee"],
-              [0.55, "#ee8ad9"],
-              [0.8, "#cf4fb5"],
-              [1, "#962c84"]
-            ],
-            zsmooth: "best",
-            colorbar: {
-              title: { text: "Sentence count" },
-              len: 0.78,
-              y: 0.39,
-              thickness: 14,
-              outlinewidth: 0
-            },
-            hovertemplate: "Words: %{x}<br>Difficulty: %{y:.2f}<br>Count: %{z}<extra></extra>",
-            showlegend: false
-          }
-        : {
-            type: "histogram2dcontour",
-            x: xValues,
-            y: yValues,
-            xaxis: "x",
-            yaxis: "y",
-            nbinsx: Math.max(8, xBins.length),
-            nbinsy: Math.max(8, yBins.length),
-            autobinx: false,
-            autobiny: false,
-            xbins: {
-              start: xRange[0],
-              end: xRange[1],
-              size: xBinSize
-            },
-            ybins: {
-              start: yRange[0],
-              end: yRange[1],
-              size: yBinSize
-            },
-            ncontours: Math.max(8, Math.min(18, xBins.length + yBins.length)),
-            contours: {
-              coloring: "heatmap",
-              showlabels: false
-            },
-            colorscale: [
-              [0, "#fff0fb"],
-              [0.25, "#f8c6ee"],
-              [0.55, "#ee8ad9"],
-              [0.8, "#cf4fb5"],
-              [1, "#962c84"]
-            ],
-            colorbar: {
-              title: { text: "Density" },
-              len: 0.78,
-              y: 0.39,
-              thickness: 14,
-              outlinewidth: 0
-            },
-            line: {
-              color: "rgba(92, 27, 89, 0.45)",
-              width: 1
-            },
-            hovertemplate: "Words: %{x}<br>Difficulty: %{y:.2f}<br>Density: %{z}<extra></extra>",
-            showscale: true,
-            showlegend: false
-          };
+  const centerTrace = {
+    type: "histogram2dcontour",
+    x: xValues,
+    y: yValues,
+    xaxis: "x",
+    yaxis: "y",
+    nbinsx: Math.max(10, xBins.length),
+    nbinsy: Math.max(10, yBins.length),
+    autobinx: false,
+    autobiny: false,
+    xbins: {
+      start: xRange[0],
+      end: xRange[1],
+      size: xBinSize
+    },
+    ybins: {
+      start: yRange[0],
+      end: yRange[1],
+      size: yBinSize
+    },
+    ncontours: Math.max(10, Math.min(20, xBins.length + yBins.length)),
+    contours: {
+      coloring: "heatmap",
+      showlabels: false
+    },
+    colorscale: "Jet",
+    colorbar: {
+      title: { text: "Density" },
+      len: 0.78,
+      y: 0.39,
+      thickness: 16,
+      outlinewidth: 0
+    },
+    line: {
+      color: "rgba(0, 0, 0, 0.28)",
+      width: 0.8
+    },
+    hovertemplate: [
+      "Words: %{x}",
+      "Difficulty: %{y:.2f}",
+      "Density: %{z}",
+      "<extra></extra>"
+    ].join("<br>"),
+    showscale: true,
+    showlegend: false
+  };
 
   const layout = {
     autosize: true,
     paper_bgcolor: CHART_COLORS.canvasBackground,
     plot_bgcolor: CHART_COLORS.panelBackground,
-    margin: { l: 72, r: 84, t: 24, b: 60 },
+    margin: { l: 72, r: 94, t: 20, b: 60 },
     bargap: 0.03,
     hoverlabel: {
       bgcolor: "rgba(35, 31, 40, 0.96)",
@@ -329,12 +257,11 @@ export default function JointDistributionChart({
   xBins,
   yBins,
   width,
-  height,
-  mode = "contour"
+  height
 }: JointDistributionChartProps) {
   const containerRef = useRef<any>(null);
 
-  const figure = useMemo(() => buildPlotlyFigure(points, xBins, yBins, mode), [points, xBins, yBins, mode]);
+  const figure = useMemo(() => buildPlotlyFigure(points, xBins, yBins), [points, xBins, yBins]);
 
   useEffect(() => {
     if (Platform.OS !== "web") {
