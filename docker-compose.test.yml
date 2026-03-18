@@ -1,0 +1,17 @@
+services:
+  frontend_test:
+    container_name: test
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.test
+    working_dir: /app
+    environment:
+      CI: "1"
+      EXPO_TUNNEL: "false"
+      EXPO_DEVTOOLS_LISTEN_ADDRESS: 0.0.0.0
+    volumes:
+      - ./frontend/app:/app
+      - /app/node_modules
+      - ./reports/frontend:/reports/frontend
+    command: >-
+      sh -lc "npm install && npm test -- --ci --runInBand --verbose"
