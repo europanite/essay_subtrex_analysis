@@ -43,12 +43,23 @@ function isHeadingParagraph(paragraph: string): boolean {
     trimmed.length <= 120 &&
     /[A-Z]/.test(trimmed) &&
     trimmed === trimmed.toUpperCase() &&
-    !/[.!?]$/.test(trimmed)
+    !/\.$/.test(trimmed)
   ) {
     return true;
   }
 
   return false;
+}
+
+function protectNonTerminalPeriods(text: string): string {
+  return text
+    // G. E. Moore / J. M. Keynes
+    .replace(/\b([A-Z])\.(?=\s+[A-Z]\.)/g, "$1∯")
+    .replace(/\b([A-Z])\.(?=\s+[A-Z][a-z])/g, "$1∯")
+
+    // Common abbreviations
+    .replace(/\b(Mr|Mrs|Ms|Dr|Prof|Sr|Jr|St|etc|vs)\.(?=\s)/g, "$1∯")
+    .replace(/\b(e\.g|i\.e|cf)\.(?=\s)/gi, (m) => m.replace(/\./g, "∯"));
 }
 
 export function splitIntoSentences(text: string): string[] {
@@ -57,7 +68,7 @@ export function splitIntoSentences(text: string): string[] {
     .split(/\n\s*\n+/) 
     .map((paragraph) =>
       paragraph
-        .split("\n") 
+        .split("\n")
         .map((line) => line.trim())
         .filter(Boolean)
         .join(" ")
@@ -67,23 +78,25 @@ export function splitIntoSentences(text: string): string[] {
     .filter(Boolean)
     .filter((paragraph) => !isHeadingParagraph(paragraph));
 
-  const hasSegmenter =
-    typeof Intl !== "undefined" &&
-    typeof (Intl as any).Segmenter === "function";
+  const sentences: string[] = [];
 
-  if (hasSegmenter) {
-    const segmenter = new Intl.Segmenter("en", { granularity: "sentence" });
+  for (const paragraph of paragraphs) {
+    const protectedParagraph = protectNonTerminalPeriods(paragraph);
 
-    return paragraphs.flatMap((paragraph) =>
-      Array.from(segmenter.segment(paragraph))
-        .map(({ segment }) => segment.trim())
-        .filter(Boolean)
-    );
+    const parts =
+      protectedParagraph.match(/[^.]+(?:\.|$)/g)?.map((part) =>
+        part.replace(/∯/g, ".").trim()
+      ) ?? [];
+
+    for (const part of parts) {
+      if (part) {
+        sentences.push(part);
+      }
+    }
   }
 
-  return paragraphs;
+  return sentences;
 }
-
 
 export function tokenizeSentence(sentence: string): string[] {
   return sentence

@@ -23,7 +23,7 @@
       "edgeToEdgeEnabled": true
     },
     "experiments": {
-      "baseUrl": "/service"
+      "baseUrl": "/essay_subtrex_analysis"
     },
     "web": {
       "favicon": "./assets/favicon.png",
