@@ -1,5 +1,10 @@
 import { loadSubtlexMap } from "./subtlexLoader";
-import type { EssayAnalysis, HistogramBin, SentencePoint } from "./types";
+import type {
+  DifficultyExample,
+  EssayAnalysis,
+  HistogramBin,
+  SentencePoint
+} from "./types";
 
 export type HistogramBinWithLabel = HistogramBin & {
   label?: string;
@@ -168,6 +173,86 @@ export function buildHistogram(
   return bins;
 }
 
+
+
+function formatDifficultyRange(start: number, end: number): string {
+  if (start === end) {
+    return `${start.toFixed(1)}`;
+  }
+  return `${start.toFixed(1)}–${end.toFixed(1)}`;
+}
+
+function wordFitsBin(
+  difficulty: number,
+  bin: HistogramBinWithLabel,
+  isLastBin: boolean
+): boolean {
+  if (isLastBin) {
+    return difficulty >= bin.start && difficulty <= bin.end;
+  }
+  return difficulty >= bin.start && difficulty < bin.end;
+}
+
+function buildDifficultyExamples(
+  points: SentencePoint[],
+  bins: HistogramBinWithLabel[],
+  map: Record<string, number>
+): DifficultyExample[] {
+  return bins.map((bin, index) => {
+    const isLastBin = index === bins.length - 1;
+    const midpoint = (bin.start + bin.end) / 2;
+    const ranked = new Map<
+      string,
+      { count: number; distance: number; difficulty: number }
+    >();
+
+    for (const point of points) {
+      for (const word of point.words) {
+        if (word.length < 3) {
+          continue;
+        }
+
+        const difficulty = difficultyFromZipf(map[word]);
+        if (!wordFitsBin(difficulty, bin, isLastBin)) {
+          continue;
+        }
+
+        const existing = ranked.get(word);
+        if (existing) {
+          existing.count += 1;
+          continue;
+        }
+
+        ranked.set(word, {
+          count: 1,
+          distance: Math.abs(difficulty - midpoint),
+          difficulty
+        });
+      }
+    }
+
+    const words = Array.from(ranked.entries())
+      .sort((a, b) => {
+        if (b[1].count !== a[1].count) {
+          return b[1].count - a[1].count;
+        }
+        if (a[1].distance !== b[1].distance) {
+          return a[1].distance - b[1].distance;
+        }
+        return a[0].localeCompare(b[0]);
+      })
+      .slice(0, 6)
+      .map(([word]) => word);
+
+    return {
+      start: bin.start,
+      end: bin.end,
+      rangeLabel: formatDifficultyRange(bin.start, bin.end),
+      words
+    };
+  });
+}
+
 export async function analyzeEssay(text: string): Promise<EssayAnalysis> {
   const { map, dictionaryName, usedFallbackDictionary } = await loadSubtlexMap();
   const sentences = splitIntoSentences(text);
@@ -208,14 +293,18 @@ export async function analyzeEssay(text: string): Promise<EssayAnalysis> {
 
   const wordCounts = points.map((point) => point.wordCount);
   const difficulties = points.map((point) => point.averageDifficulty);
+  const xBins = buildHistogram(wordCounts, 10);
+  const yBins = buildHistogram(difficulties, 10);
+  const difficultyExamples = buildDifficultyExamples(points, yBins, map);
 
   const totalWords = points.reduce((sum, point) => sum + point.wordCount, 0);
   const totalUnknownWords = points.reduce((sum, point) => sum + point.unknownWordCount, 0);
 
   return {
     sentences: points,
-    xBins: buildHistogram(wordCounts, 10),
-    yBins: buildHistogram(difficulties, 10),
+    xBins,
+    yBins,
+    difficultyExamples,
     dictionaryName,
     usedFallbackDictionary,
     unknownRate: totalWords ? round((totalUnknownWords / totalWords) * 100) : 0,

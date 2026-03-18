@@ -93,9 +93,9 @@ function buildPlotlyFigure(points: SentencePoint[], xBins: HistogramBin[], yBins
     yaxis: "y3",
     nbinsy: Math.max(6, yBins.length),
     marker: {
-      color: "#d7191c",
+      color: "#2c7bb6",
       line: {
-        color: "#a50f15",
+        color: "#1d5d8f",
         width: 1
       }
     },

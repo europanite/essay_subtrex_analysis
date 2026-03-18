@@ -15,10 +15,18 @@ export type HistogramBin = {
   count: number;
 };
 
+export type DifficultyExample = {
+  start: number;
+  end: number;
+  rangeLabel: string;
+  words: string[];
+};
+
 export type EssayAnalysis = {
   sentences: SentencePoint[];
   xBins: HistogramBin[];
   yBins: HistogramBin[];
+  difficultyExamples: DifficultyExample[];
   dictionaryName: string;
   usedFallbackDictionary: boolean;
   unknownRate: number;

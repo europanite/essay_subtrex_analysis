@@ -63,6 +63,15 @@ export default function HomeScreen() {
     ];
   }, [analysis]);
 
+
+  const difficultyGuide = useMemo(() => {
+    if (!analysis) {
+      return [];
+    }
+
+    return analysis.difficultyExamples.filter((item) => item.words.length > 0);
+  }, [analysis]);
+
   return (
     <ScrollView
       contentContainerStyle={{
@@ -138,6 +147,42 @@ export default function HomeScreen() {
             width={chartWidth}
             height={620}
           />
+
+          {difficultyGuide.length > 0 ? (
+            <InfoCard title="Difficulty guide from actual words">
+              <Text style={{ fontSize: 14, lineHeight: 22, color: CHART_COLORS.bodyText }}>
+                Each band shows example words taken from the current essay. They are grouped by
+                word-level difficulty so you can read the y-axis more intuitively.
+              </Text>
+
+              <View style={{ gap: 10 }}>
+                {difficultyGuide.map((item) => (
+                  <View
+                    key={item.rangeLabel}
+                    style={{
+                      paddingBottom: 10,
+                      borderBottomWidth: 1,
+                      borderBottomColor: "#ece6f0",
+                      gap: 4
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        fontWeight: "700",
+                        color: CHART_COLORS.titleText
+                      }}
+                    >
+                      Difficulty {item.rangeLabel}
+                    </Text>
+                    <Text style={{ fontSize: 14, lineHeight: 22, color: CHART_COLORS.bodyText }}>
+                      {item.words.join(", ")}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </InfoCard>
+          ) : null}
 
           <SentenceTable sentences={analysis.sentences} />
         </>
