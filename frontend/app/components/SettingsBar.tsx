@@ -1,5 +1,10 @@
 import React from "react";
-import { Text, View } from "react-native";
+import { 
+  View, 
+  Text, 
+  TouchableOpacity,
+  Linking 
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { APP_NAME } from "../lib/constants";
@@ -16,9 +21,22 @@ export default function SettingsBar() {
           gap: 6
         }}
       >
-        <Text style={{ color: "#fff7ff", fontSize: 22, fontWeight: "800" }}>
-          {APP_NAME}
-        </Text>
+
+        <TouchableOpacity onPress={() => Linking.openURL(REPO_URL)}>
+          <Text
+            style={{
+              color: "#fff7ff",
+              fontSize: 24,
+              fontWeight: "800",
+              marginBottom: 12,
+              color: "#333333ff",
+              textDecorationLine: "underline",
+            }}
+          >
+            {APP_NAME}
+          </Text>
+        </TouchableOpacity>
+
       </View>
     </SafeAreaView>
   );
