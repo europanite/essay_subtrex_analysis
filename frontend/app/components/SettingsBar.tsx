@@ -31,7 +31,6 @@ export default function SettingsBar() {
               fontSize: 24,
               fontWeight: "800",
               marginBottom: 12,
-              color: "#333333ff",
               textDecorationLine: "underline",
             }}
           >
