@@ -195,62 +195,73 @@ function wordFitsBin(
 
 function buildDifficultyExamples(
   points: SentencePoint[],
-  bins: HistogramBinWithLabel[],
-  map: Record<string, number>
+  map: Record<string, number>,
+  binCount = 10
 ): DifficultyExample[] {
-  return bins.map((bin, index) => {
-    const isLastBin = index === bins.length - 1;
-    const midpoint = (bin.start + bin.end) / 2;
-    const ranked = new Map<
-      string,
-      { count: number; distance: number; difficulty: number }
-    >();
+  const ranked = new Map<string, { count: number; difficulty: number }>();
 
-    for (const point of points) {
-      for (const word of point.words) {
-        if (word.length < 3) {
-          continue;
-        }
-
-        const difficulty = difficultyFromZipf(map[word]);
-        if (!wordFitsBin(difficulty, bin, isLastBin)) {
-          continue;
-        }
-
-        const existing = ranked.get(word);
-        if (existing) {
-          existing.count += 1;
-          continue;
-        }
-
-        ranked.set(word, {
-          count: 1,
-          distance: Math.abs(difficulty - midpoint),
-          difficulty
-        });
+  for (const point of points) {
+    for (const word of point.words) {
+      if (word.length < 3) {
+        continue;
       }
+
+      const difficulty = difficultyFromZipf(map[word]);
+      const existing = ranked.get(word);
+
+      if (existing) {
+        existing.count += 1;
+        continue;
+      }
+
+      ranked.set(word, {
+        count: 1,
+        difficulty
+      });
     }
+  }
 
-    const words = Array.from(ranked.entries())
-      .sort((a, b) => {
-        if (b[1].count !== a[1].count) {
-          return b[1].count - a[1].count;
-        }
-        if (a[1].distance !== b[1].distance) {
-          return a[1].distance - b[1].distance;
-        }
-        return a[0].localeCompare(b[0]);
-      })
-      .slice(0, 6)
-      .map(([word]) => word);
+  const entries = Array.from(ranked.entries()).map(([word, info]) => ({
+    word,
+    count: info.count,
+    difficulty: info.difficulty
+  }));
 
-    return {
-      start: bin.start,
-      end: bin.end,
-      rangeLabel: formatDifficultyRange(bin.start, bin.end),
-      words
-    };
-  });
+  if (entries.length === 0) {
+    return [];
+  }
+
+  const bins = buildHistogram(
+    entries.map((entry) => entry.difficulty),
+    binCount
+  );
+
+  return bins
+    .map((bin, index) => {
+      const isLastBin = index === bins.length - 1;
+
+      const words = entries
+        .filter((entry) => wordFitsBin(entry.difficulty, bin, isLastBin))
+        .sort((a, b) => {
+          if (a.difficulty !== b.difficulty) {
+            return a.difficulty - b.difficulty;
+          }
+          if (b.count !== a.count) {
+            return b.count - a.count;
+          }
+          return a.word.localeCompare(b.word);
+        })
+        .slice(0, 6)
+        .map((entry) => entry.word);
+
+      return {
+        start: bin.start,
+        end: bin.end,
+        rangeLabel: formatDifficultyRange(bin.start, bin.end),
+        words
+      };
+    })
+    .filter((band) => band.words.length > 0);
 }
 
 export async function analyzeEssay(text: string): Promise<EssayAnalysis> {
@@ -295,7 +306,7 @@ export async function analyzeEssay(text: string): Promise<EssayAnalysis> {
   const difficulties = points.map((point) => point.averageDifficulty);
   const xBins = buildHistogram(wordCounts, 10);
   const yBins = buildHistogram(difficulties, 10);
-  const difficultyExamples = buildDifficultyExamples(points, yBins, map);
+  const difficultyExamples = buildDifficultyExamples(points, map, 10);
 
   const totalWords = points.reduce((sum, point) => sum + point.wordCount, 0);
   const totalUnknownWords = points.reduce((sum, point) => sum + point.unknownWordCount, 0);
