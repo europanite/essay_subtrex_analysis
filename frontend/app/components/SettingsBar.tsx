@@ -9,6 +9,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { APP_NAME } from "../lib/constants";
 
+export const REPO_URL      = "https://github.com/europanite/essay_subtrex_analysis";
+
 export default function SettingsBar() {
   return (
     <SafeAreaView edges={["top"]} style={{ backgroundColor: "#2d2532" }}>
