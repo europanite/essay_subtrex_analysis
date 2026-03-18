@@ -22,11 +22,20 @@ export type DifficultyExample = {
   words: string[];
 };
 
+export type WordDiagnostic = {
+  word: string;
+  rawScore: number | null;
+  normalizedScore: number | null;
+  difficulty: number | null;
+  occurrencesInEssay: number;
+};
+
 export type EssayAnalysis = {
   sentences: SentencePoint[];
   xBins: HistogramBin[];
   yBins: HistogramBin[];
   difficultyExamples: DifficultyExample[];
+  wordDiagnostics: WordDiagnostic[];
   dictionaryName: string;
   usedFallbackDictionary: boolean;
   unknownRate: number;

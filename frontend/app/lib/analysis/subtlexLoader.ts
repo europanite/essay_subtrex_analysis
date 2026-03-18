@@ -7,25 +7,50 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
-function scoreFromRawNumber(raw: number): number {
-  if (!Number.isFinite(raw)) {
+export function normalizeSubtlexRawNumber(raw: number): number {
+  if (!Number.isFinite(raw) || raw <= 0) {
     return 0;
   }
 
-  if (raw >= 0 && raw <= 8) {
-    return raw;
+  return clamp(Math.log10(raw + 1), 0, 8);
+}
+
+
+function readCandidateRawNumber(item: unknown): number | null {
+  if (typeof item === "number" && Number.isFinite(item)) {
+    return item;
   }
 
-  if (raw > 8) {
-    return clamp(Math.log10(raw + 1), 0, 8);
+  if (!item || typeof item !== "object") {
+    return null;
   }
 
-  return 0;
+  const row = item as Record<string, unknown>;
+  const candidates = [
+    row.zipf,
+    row.Zipf,
+    row.lg10WF,
+    row.log10WF,
+    row.log10wf,
+    row.frequency,
+    row.freq,
+    row.fpm,
+    row.count,
+    row.value
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === "number" && Number.isFinite(candidate)) {
+      return candidate;
+    }
+  }
+
+  return null;
 }
 
 function readCandidateValue(item: unknown): number | null {
   if (typeof item === "number") {
-    return scoreFromRawNumber(item);
+    return normalizeSubtlexRawNumber(item);
   }
 
   if (!item || typeof item !== "object") {
@@ -48,7 +73,7 @@ function readCandidateValue(item: unknown): number | null {
 
   for (const candidate of candidates) {
     if (typeof candidate === "number") {
-      return scoreFromRawNumber(candidate);
+      return normalizeSubtlexRawNumber(candidate);
     }
   }
 
@@ -72,7 +97,7 @@ function readCandidateWord(item: unknown): string | null {
   return null;
 }
 
-function normalizeModule(rawModule: unknown): Record<string, number> | null {
+function normalizeModule(rawModule: unknown): { map: Record<string, number>; rawMap: Record<string, number> } | null {
   const raw =
     rawModule &&
     typeof rawModule === "object" &&
@@ -86,19 +111,25 @@ function normalizeModule(rawModule: unknown): Record<string, number> | null {
 
   if (Array.isArray(raw)) {
     const map: Record<string, number> = {};
+    const rawMap: Record<string, number> = {};
     for (const item of raw) {
       const word = readCandidateWord(item);
       const value = readCandidateValue(item);
+      const rawValue = readCandidateRawNumber(item);
       if (word && value !== null) {
         map[word] = value;
+        if (rawValue !== null) {
+          rawMap[word] = rawValue;
+        }
       }
     }
-    return Object.keys(map).length ? map : null;
+    return Object.keys(map).length ? { map, rawMap } : null;
   }
 
   if (typeof raw === "object") {
     const source = raw as Record<string, unknown>;
     const map: Record<string, number> = {};
+    const rawMap: Record<string, number> = {};
 
     for (const [key, value] of Object.entries(source)) {
       if (typeof key === "string") {
@@ -110,12 +141,13 @@ function normalizeModule(rawModule: unknown): Record<string, number> | null {
         }
 
         if (typeof value === "number") {
-          map[normalizedKey] = scoreFromRawNumber(value);
+          map[normalizedKey] = normalizeSubtlexRawNumber(value);
+          rawMap[normalizedKey] = value;
         }
       }
     }
 
-    return Object.keys(map).length ? map : null;
+    return Object.keys(map).length ? { map, rawMap } : null;
   }
 
   return null;
@@ -128,11 +160,12 @@ export async function loadSubtlexMap(): Promise<DictionaryLoadResult> {
 
   try {
     const mod = await import("subtlex-word-frequencies");
-    const map = normalizeModule(mod);
+    const normalized = normalizeModule(mod);
 
-    if (map && Object.keys(map).length > 0) {
+    if (normalized && Object.keys(normalized.map).length > 0) {
       cache = {
-        map,
+        map: normalized.map,
+        rawMap: normalized.rawMap,
         dictionaryName: "subtlex-word-frequencies",
         usedFallbackDictionary: false
       };
@@ -144,6 +177,7 @@ export async function loadSubtlexMap(): Promise<DictionaryLoadResult> {
 
   cache = {
     map: FALLBACK_SUBTLEX_MAP,
+    rawMap: {},
     dictionaryName: "Fallback SUBTLEX starter dictionary",
     usedFallbackDictionary: true
   };
