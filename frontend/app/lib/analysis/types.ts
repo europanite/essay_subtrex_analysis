@@ -49,6 +49,7 @@ export type EssayAnalysis = {
 
 export type DictionaryLoadResult = {
   map: Record<string, number>;
+  rawMap: Record<string, number>;
   dictionaryName: string;
   usedFallbackDictionary: boolean;
 };
