@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Pressable,
   ScrollView,
   Text,
   useWindowDimensions,
@@ -14,6 +15,7 @@ import { loadSampleEssayText } from "../lib/analysis/sampleEssay";
 import { analyzeEssay } from "../lib/analysis/text";
 import type { EssayAnalysis } from "../lib/analysis/types";
 import { CHART_COLORS } from "../lib/constants";
+
 export default function HomeScreen() {
   const { width } = useWindowDimensions();
   const chartWidth = Math.max(320, Math.min(width - 96, 980));
@@ -21,6 +23,7 @@ export default function HomeScreen() {
   const [analysis, setAnalysis] = useState<EssayAnalysis | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showDifficultyGuide, setShowDifficultyGuide] = useState(false);
 
   const handleLoadSample = async () => {
     try {
@@ -42,6 +45,7 @@ export default function HomeScreen() {
       setError(null);
       const result = await analyzeEssay(essay);
       setAnalysis(result);
+      setShowDifficultyGuide(false);
     } catch (_analysisError) {
       setError("Failed to analyze the essay. Please check the input text.");
     } finally {
@@ -62,7 +66,6 @@ export default function HomeScreen() {
       { label: "Unknown-word rate", value: `${analysis.unknownRate}%` }
     ];
   }, [analysis]);
-
 
   const difficultyGuide = useMemo(() => {
     if (!analysis) {
@@ -91,7 +94,8 @@ export default function HomeScreen() {
       {!analysis && !busy ? (
         <InfoCard title="How the score works">
           <Text style={{ fontSize: 14, lineHeight: 22, color: CHART_COLORS.bodyText }}>
-            Average word difficulty is estimated from a SUBTLEX-style frequency dictionary. Common words stay lower on the chart, while rarer or unknown words move a sentence upward.
+            Average word difficulty is estimated from a SUBTLEX-style frequency dictionary.
+            Common words stay lower on the chart, while rarer or unknown words move a sentence upward.
           </Text>
         </InfoCard>
       ) : null}
@@ -130,10 +134,8 @@ export default function HomeScreen() {
                   gap: 6
                 }}
               >
-                <Text style={{ fontSize: 12, color: CHART_COLORS.subtleText, fontWeight: "700" }}>
-                  {card.label}
-                </Text>
-                <Text style={{ fontSize: 22, color: CHART_COLORS.titleText, fontWeight: "800" }}>
+                <Text style={{ fontSize: 13, color: CHART_COLORS.axisText }}>{card.label}</Text>
+                <Text style={{ fontSize: 22, fontWeight: "800", color: CHART_COLORS.titleText }}>
                   {card.value}
                 </Text>
               </View>
@@ -141,12 +143,93 @@ export default function HomeScreen() {
           </View>
 
           <JointDistributionChart
-            points={analysis.sentences}
-            xBins={analysis.xBins}
-            yBins={analysis.yBins}
+            points={analysis.sentences ?? []}
+            xBins={analysis.wordCountHistogram ?? []}
+            yBins={analysis.difficultyHistogram ?? []}
             width={chartWidth}
-            height={620}
+            height={560}
           />
+
+          {difficultyGuide.length > 0 ? (
+            <View style={{ position: "relative", alignSelf: "flex-start" }}>
+              <Pressable
+                onPress={() => setShowDifficultyGuide((prev) => !prev)}
+                style={({ pressed }) => ({
+                  paddingHorizontal: 14,
+                  paddingVertical: 10,
+                  borderRadius: 999,
+                  borderWidth: 1,
+                  borderColor: "#d8cde1",
+                  backgroundColor: pressed ? "#f3edf7" : "#ffffff"
+                })}
+              >
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "700",
+                    color: CHART_COLORS.titleText
+                  }}
+                >
+                  Difficulty examples
+                </Text>
+              </Pressable>
+
+              {showDifficultyGuide ? (
+                <View
+                  style={{
+                    marginTop: 10,
+                    width: Math.min(chartWidth, 520)
+                  }}
+                >
+                  <InfoCard title="Difficulty guide from actual words">
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        lineHeight: 22,
+                        color: CHART_COLORS.bodyText
+                      }}
+                    >
+                      Each band shows example words taken from the current essay. They are grouped by
+                      word-level difficulty so you can read the y-axis more intuitively.
+                    </Text>
+
+                    <View style={{ gap: 10 }}>
+                      {difficultyGuide.map((item) => (
+                        <View
+                          key={item.rangeLabel}
+                          style={{
+                            paddingBottom: 10,
+                            borderBottomWidth: 1,
+                            borderBottomColor: "#ece6f0",
+                            gap: 4
+                          }}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 13,
+                              fontWeight: "700",
+                              color: CHART_COLORS.titleText
+                            }}
+                          >
+                            Difficulty {item.rangeLabel}
+                          </Text>
+                          <Text
+                            style={{
+                              fontSize: 14,
+                              lineHeight: 22,
+                              color: CHART_COLORS.bodyText
+                            }}
+                          >
+                            {item.words.join(", ")}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  </InfoCard>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
 
           <SentenceTable sentences={analysis.sentences} />
         </>
