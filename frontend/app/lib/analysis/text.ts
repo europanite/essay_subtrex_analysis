@@ -11,6 +11,8 @@ export type HistogramBinWithLabel = HistogramBin & {
   label?: string;
 };
 
+const FIXED_BIN_COUNT = 8;
+
 const PROTECTED_PERIOD = "\uE000";
 
 function round(value: number, digits = 2): number {
@@ -348,9 +350,9 @@ export async function analyzeEssay(text: string): Promise<EssayAnalysis> {
 
   const wordCounts = points.map((point) => point.wordCount);
   const difficulties = points.map((point) => point.averageDifficulty);
-  const xBins = buildHistogram(wordCounts, 10);
-  const yBins = buildHistogram(difficulties, 10);
-  const difficultyExamples = buildDifficultyExamples(points, map, 10);
+  const xBins = buildHistogram(wordCounts, FIXED_BIN_COUNT);
+  const yBins = buildHistogram(difficulties, FIXED_BIN_COUNT);
+  const difficultyExamples = buildDifficultyExamples(points, map, FIXED_BIN_COUNT);
   const wordDiagnostics = buildWordDiagnostics(points, map, rawMap);
 
   const totalWords = points.reduce((sum, point) => sum + point.wordCount, 0);

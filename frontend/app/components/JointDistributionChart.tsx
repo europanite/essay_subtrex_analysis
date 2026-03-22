@@ -4,12 +4,22 @@ import type { HistogramBin, SentencePoint } from "../lib/analysis/types";
 import { CHART_COLORS } from "../lib/constants";
 
 type JointDistributionChartProps = {
-  points: SentencePoint[];
-  xBins: HistogramBin[];
-  yBins: HistogramBin[];
+  points?: SentencePoint[];
+  xBins?: HistogramBin[];
+  yBins?: HistogramBin[];
   width: number;
   height: number;
 };
+
+const FIXED_BIN_COUNT   =  8;
+const FIXED_BIN_COUNT_x = 20;
+const FIXED_BIN_COUNT_y = 16;
+const FIXED_X_RANGE: [number, number] = [0, 100];
+const FIXED_Y_RANGE: [number, number] = [0, 8];
+const FIXED_X_BIN_SIZE =
+  (FIXED_X_RANGE[1] - FIXED_X_RANGE[0]) / FIXED_BIN_COUNT_x;
+const FIXED_Y_BIN_SIZE =
+  (FIXED_Y_RANGE[1] - FIXED_Y_RANGE[0]) / FIXED_BIN_COUNT_y;
 
 type PlotlyLike = {
   react: (element: HTMLElement, data: any[], layout: any, config?: any) => Promise<any>;
@@ -21,37 +31,29 @@ function sentencePreview(sentence: string) {
   return sentence.length > 120 ? `${sentence.slice(0, 117)}...` : sentence;
 }
 
-function binSize(bins: HistogramBin[], fallback: number) {
-  if (bins.length > 0) {
-    return Math.max(0.0001, bins[0].end - bins[0].start);
-  }
-  return fallback;
+function normalizePoints(points?: SentencePoint[]) {
+  return Array.isArray(points) ? points : [];
 }
 
-function axisRange(bins: HistogramBin[], values: number[], paddingRatio = 0.04) {
-  if (bins.length > 0) {
-    return [bins[0].start, bins[bins.length - 1].end];
-  }
-  if (values.length === 0) {
-    return [0, 1];
-  }
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  if (min === max) {
-    return [min - 1, max + 1];
-  }
-  const pad = (max - min) * paddingRatio;
-  return [min - pad, max + pad];
+function normalizeBins(bins?: HistogramBin[]) {
+  return Array.isArray(bins) ? bins : [];
 }
 
-function buildPlotlyFigure(points: SentencePoint[], xBins: HistogramBin[], yBins: HistogramBin[]) {
+function buildPlotlyFigure(
+  rawPoints?: SentencePoint[],
+  rawXBins?: HistogramBin[],
+  rawYBins?: HistogramBin[]
+) {
+  const points = normalizePoints(rawPoints);
+  const xBins = normalizeBins(rawXBins);
+  const yBins = normalizeBins(rawYBins);
   const xValues = points.map((point) => point.wordCount);
   const yValues = points.map((point) => point.averageDifficulty);
   const previews = points.map((point) => sentencePreview(point.sentence));
-  const xRange = axisRange(xBins, xValues);
-  const yRange = axisRange(yBins, yValues);
-  const xBinSize = binSize(xBins, 1);
-  const yBinSize = binSize(yBins, 0.2);
+  const xRange = FIXED_X_RANGE;
+  const yRange = FIXED_Y_RANGE;
+  const xBinSize = FIXED_X_BIN_SIZE;
+  const yBinSize = FIXED_Y_BIN_SIZE;
 
   const sharedHover = points.map((point) => [
     point.sentence,
@@ -67,7 +69,7 @@ function buildPlotlyFigure(points: SentencePoint[], xBins: HistogramBin[], yBins
     x: xValues,
     xaxis: "x2",
     yaxis: "y2",
-    nbinsx: Math.max(6, xBins.length),
+    nbinsx: FIXED_BIN_COUNT_x,
     marker: {
       color: "#2c7bb6",
       line: {
@@ -91,7 +93,7 @@ function buildPlotlyFigure(points: SentencePoint[], xBins: HistogramBin[], yBins
     y: yValues,
     xaxis: "x3",
     yaxis: "y3",
-    nbinsy: Math.max(6, yBins.length),
+    nbinsy: FIXED_BIN_COUNT_y,
     marker: {
       color: "#2c7bb6",
       line: {
@@ -116,8 +118,8 @@ function buildPlotlyFigure(points: SentencePoint[], xBins: HistogramBin[], yBins
     y: yValues,
     xaxis: "x",
     yaxis: "y",
-    nbinsx: Math.max(10, xBins.length),
-    nbinsy: Math.max(10, yBins.length),
+    nbinsx: FIXED_BIN_COUNT_x,
+    nbinsy: FIXED_BIN_COUNT_y,
     autobinx: false,
     autobiny: false,
     xbins: {
@@ -130,7 +132,7 @@ function buildPlotlyFigure(points: SentencePoint[], xBins: HistogramBin[], yBins
       end: yRange[1],
       size: yBinSize
     },
-    ncontours: Math.max(10, Math.min(20, xBins.length + yBins.length)),
+    ncontours: FIXED_BIN_COUNT,
     contours: {
       coloring: "heatmap",
       showlabels: false
@@ -253,9 +255,9 @@ function buildPlotlyFigure(points: SentencePoint[], xBins: HistogramBin[], yBins
 }
 
 export default function JointDistributionChart({
-  points,
-  xBins,
-  yBins,
+  points = [],
+  xBins = [],
+  yBins = [],
   width,
   height
 }: JointDistributionChartProps) {
