@@ -4,8 +4,8 @@ import {
   tokenizeSentence
 } from "../lib/analysis/text";
 
-test("splits only on blank lines and true sentence-ending periods", () => {
-  expect(splitIntoSentences("One. Two? Three!")).toEqual(["One.", "Two? Three!"]);
+test("splits on true sentence-ending periods and question marks", () => {
+  expect(splitIntoSentences("One. Two? Three!")).toEqual(["One.", "Two?", "Three!"]);
 });
 
 test("does not split on single line breaks inside a paragraph", () => {
