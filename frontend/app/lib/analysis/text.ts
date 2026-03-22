@@ -95,7 +95,7 @@ export function splitIntoSentences(text: string): string[] {
   for (const paragraph of paragraphs) {
     const protectedParagraph = protectNonTerminalPeriods(paragraph);
     const parts =
-      protectedParagraph.match(/[^.]+(?:\.|$)/g)?.map((part) => part.trim()) ??
+      protectedParagraph.match(/[^.?]+(?:[.?]|$)/g)?.map((part) => part.trim()) ??
       [];
 
     for (const part of parts) {
