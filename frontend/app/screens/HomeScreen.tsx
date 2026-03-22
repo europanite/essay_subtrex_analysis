@@ -144,8 +144,8 @@ export default function HomeScreen() {
 
           <JointDistributionChart
             points={analysis.sentences ?? []}
-            xBins={analysis.wordCountHistogram ?? []}
-            yBins={analysis.difficultyHistogram ?? []}
+            xBins={analysis.xBins ?? []}
+            yBins={analysis.yBins ?? []}
             width={chartWidth}
             height={560}
           />
