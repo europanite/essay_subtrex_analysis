@@ -1,8 +1,8 @@
 ---
 layout: page
-title: "🇺🇸 English"
-permalink: /
-lang: en
+title: "🇩🇪 Deutsch"
+permalink: /de/
+lang: de
 ---
 
 # [essay_subtrex_analysis](https://github.com/europanite/essay_subtrex_analysis "essay_subtrex_analysis")
@@ -24,27 +24,27 @@ lang: en
 
 # Essay SUBTLEX　Analysis
 
-A web application to analyzes an English essay and visualizes each sentence.
+Eine Webanwendung, die einen englischen Essay analysiert und jeden Satz visualisiert.
 
-## What it shows
+## Was angezeigt wird
 
-- **X axis:** sentence word count
-- **Y axis:** average word difficulty derived from a SUBTLEX-based frequency dictionary
-- **Top histogram:** sentence word-count distribution
-- **Right histogram:** sentence difficulty distribution
-- **Sentence table:** per-sentence metrics including unknown-word counts
+- **X axis:** Wortanzahl des Satzes
+- **Y axis:** durchschnittliche Wortschwierigkeit, abgeleitet aus einem SUBTLEX-basierten Häufigkeitswörterbuch
+- **Top histogram:** Verteilung der Wortanzahl pro Satz
+- **Right histogram:** Verteilung der Satzschwierigkeit
+- **Sentence table:** Metriken pro Satz, einschließlich der Anzahl unbekannter Wörter
 
-## Dictionary strategy
+## Wörterbuchstrategie
 
-The app attempts to load the npm package `subtlex-word-frequencies` dynamically at runtime. A fallback mini dictionary is bundled so the UI still works during local development, tests, and cases where the package export shape differs from expectations.
+Die App versucht, das npm-Paket `subtlex-word-frequencies` zur Laufzeit dynamisch zu laden. Ein fallback mini dictionary ist gebündelt, damit die UI während der lokalen Entwicklung, in Tests und in Fällen, in denen sich der export shape des Pakets von den Erwartungen unterscheidet, weiterhin funktioniert.
 
-`frontend/app/lib/analysis/subtlexLoader.ts` normalizes several common shapes:
+`frontend/app/lib/analysis/subtlexLoader.ts` normalisiert mehrere gängige shapes:
 
-- direct `{ word: score }` maps
-- arrays of objects such as `{ word, zipf }`
-- objects with fields like `frequency`, `count`, `fpm`, `lg10WF`, or `zipf`
+- direkte `{ word: score }` maps
+- arrays von objects wie `{ word, zipf }`
+- objects mit fields wie `frequency`, `count`, `fpm`, `lg10WF` oder `zipf`
 
-## Getting started
+## Erste Schritte
 
 ### Local Node workflow
 
@@ -65,4 +65,3 @@ docker compose up --build
 ```bash
 docker compose -f docker-compose.test.yml up --build --exit-code-from frontend_test
 ```
-

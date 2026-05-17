@@ -3,7 +3,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: service
+    container_name: frontend
     working_dir: /app
     stdin_open: true
     tty: true

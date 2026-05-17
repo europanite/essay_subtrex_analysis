@@ -14,4 +14,11 @@ services:
       - /app/node_modules
       - ./reports/frontend:/reports/frontend
     command: >-
-      sh -lc "npm install && npm test -- --ci --runInBand --verbose"
+      sh -lc "
+        mkdir -p /reports/frontend &&
+        npm install &&
+        npm test -- --ci --runInBand --verbose --coverage --coverageDirectory=/reports/frontend/coverage;
+        status=$$?;
+        printf 'docker compose frontend_test exit code: %s\n' \"$$status\" > /reports/frontend/docker-test-result.txt;
+        exit \"$$status\"
+      "
