@@ -1,8 +1,8 @@
 ---
 layout: page
-title: "🇺🇸 English"
-permalink: /
-lang: en
+title: "🇰🇷 한국어"
+permalink: /ko/
+lang: ko
 ---
 
 # [essay_subtrex_analysis](https://github.com/europanite/essay_subtrex_analysis "essay_subtrex_analysis")
@@ -24,27 +24,27 @@ lang: en
 
 # Essay SUBTLEX　Analysis
 
-A web application to analyzes an English essay and visualizes each sentence.
+영어 에세이를 분석하고 각 문장을 시각화하는 웹 애플리케이션입니다.
 
-## What it shows
+## 표시 내용
 
-- **X axis:** sentence word count
-- **Y axis:** average word difficulty derived from a SUBTLEX-based frequency dictionary
-- **Top histogram:** sentence word-count distribution
-- **Right histogram:** sentence difficulty distribution
-- **Sentence table:** per-sentence metrics including unknown-word counts
+- **X axis:** 문장의 단어 수
+- **Y axis:** SUBTLEX 기반 빈도 사전에서 계산한 평균 단어 난이도
+- **Top histogram:** 문장 단어 수 분포
+- **Right histogram:** 문장 난이도 분포
+- **Sentence table:** 알 수 없는 단어 수를 포함한 문장별 메트릭
 
-## Dictionary strategy
+## 사전 전략
 
-The app attempts to load the npm package `subtlex-word-frequencies` dynamically at runtime. A fallback mini dictionary is bundled so the UI still works during local development, tests, and cases where the package export shape differs from expectations.
+이 앱은 런타임에 npm 패키지 `subtlex-word-frequencies`를 동적으로 로드하려고 시도합니다. fallback mini dictionary가 함께 포함되어 있어 로컬 개발, 테스트, 그리고 패키지의 export shape가 예상과 다른 경우에도 UI가 계속 동작합니다.
 
-`frontend/app/lib/analysis/subtlexLoader.ts` normalizes several common shapes:
+`frontend/app/lib/analysis/subtlexLoader.ts`는 여러 일반적인 shapes를 normalize합니다:
 
-- direct `{ word: score }` maps
-- arrays of objects such as `{ word, zipf }`
-- objects with fields like `frequency`, `count`, `fpm`, `lg10WF`, or `zipf`
+- 직접적인 `{ word: score }` maps
+- `{ word, zipf }`와 같은 objects arrays
+- `frequency`, `count`, `fpm`, `lg10WF` 또는 `zipf` 같은 fields가 있는 objects
 
-## Getting started
+## 시작하기
 
 ### Local Node workflow
 
@@ -65,4 +65,3 @@ docker compose up --build
 ```bash
 docker compose -f docker-compose.test.yml up --build --exit-code-from frontend_test
 ```
-

@@ -1,8 +1,8 @@
 ---
 layout: page
-title: "🇺🇸 English"
-permalink: /
-lang: en
+title: "🇯🇵 日本語"
+permalink: /ja/
+lang: ja
 ---
 
 # [essay_subtrex_analysis](https://github.com/europanite/essay_subtrex_analysis "essay_subtrex_analysis")
@@ -24,27 +24,27 @@ lang: en
 
 # Essay SUBTLEX　Analysis
 
-A web application to analyzes an English essay and visualizes each sentence.
+英語エッセイを分析し、各文を可視化するWebアプリケーション。
 
-## What it shows
+## 表示内容
 
-- **X axis:** sentence word count
-- **Y axis:** average word difficulty derived from a SUBTLEX-based frequency dictionary
-- **Top histogram:** sentence word-count distribution
-- **Right histogram:** sentence difficulty distribution
-- **Sentence table:** per-sentence metrics including unknown-word counts
+- **X axis:** 文の単語数
+- **Y axis:** SUBTLEXベースの頻度辞書から算出した平均単語難易度
+- **Top histogram:** 文の単語数分布
+- **Right histogram:** 文の難易度分布
+- **Sentence table:** 未知語数を含む文ごとのメトリクス
 
-## Dictionary strategy
+## 辞書戦略
 
-The app attempts to load the npm package `subtlex-word-frequencies` dynamically at runtime. A fallback mini dictionary is bundled so the UI still works during local development, tests, and cases where the package export shape differs from expectations.
+このアプリは、npmパッケージ `subtlex-word-frequencies` を実行時に動的ロードしようとする。fallback mini dictionary を同梱しているため、ローカル開発、テスト、またはパッケージの export shape が想定と異なる場合でもUIは動作する。
 
-`frontend/app/lib/analysis/subtlexLoader.ts` normalizes several common shapes:
+`frontend/app/lib/analysis/subtlexLoader.ts` は、いくつかの一般的な shapes を normalize する:
 
-- direct `{ word: score }` maps
-- arrays of objects such as `{ word, zipf }`
-- objects with fields like `frequency`, `count`, `fpm`, `lg10WF`, or `zipf`
+- 直接的な `{ word: score }` maps
+- `{ word, zipf }` のような objects の arrays
+- `frequency`, `count`, `fpm`, `lg10WF`, または `zipf` のような fields を持つ objects
 
-## Getting started
+## はじめに
 
 ### Local Node workflow
 
@@ -65,4 +65,3 @@ docker compose up --build
 ```bash
 docker compose -f docker-compose.test.yml up --build --exit-code-from frontend_test
 ```
-

@@ -1,8 +1,8 @@
 ---
 layout: page
-title: "🇺🇸 English"
-permalink: /
-lang: en
+title: "🇨🇳 中文"
+permalink: /zh-CN/
+lang: zh-CN
 ---
 
 # [essay_subtrex_analysis](https://github.com/europanite/essay_subtrex_analysis "essay_subtrex_analysis")
@@ -24,27 +24,27 @@ lang: en
 
 # Essay SUBTLEX　Analysis
 
-A web application to analyzes an English essay and visualizes each sentence.
+一个用于分析英文作文并可视化每个句子的 Web 应用程序。
 
-## What it shows
+## 显示内容
 
-- **X axis:** sentence word count
-- **Y axis:** average word difficulty derived from a SUBTLEX-based frequency dictionary
-- **Top histogram:** sentence word-count distribution
-- **Right histogram:** sentence difficulty distribution
-- **Sentence table:** per-sentence metrics including unknown-word counts
+- **X axis:** 句子词数
+- **Y axis:** 基于 SUBTLEX 频率词典得出的平均单词难度
+- **Top histogram:** 句子词数分布
+- **Right histogram:** 句子难度分布
+- **Sentence table:** 每个句子的指标，包括未知词数量
 
-## Dictionary strategy
+## 词典策略
 
-The app attempts to load the npm package `subtlex-word-frequencies` dynamically at runtime. A fallback mini dictionary is bundled so the UI still works during local development, tests, and cases where the package export shape differs from expectations.
+该应用会在运行时尝试动态加载 npm 包 `subtlex-word-frequencies`。同时内置了一个 fallback mini dictionary，因此在本地开发、测试，以及包的 export shape 与预期不同时，UI 仍然可以工作。
 
-`frontend/app/lib/analysis/subtlexLoader.ts` normalizes several common shapes:
+`frontend/app/lib/analysis/subtlexLoader.ts` 会 normalize 几种常见 shapes:
 
-- direct `{ word: score }` maps
-- arrays of objects such as `{ word, zipf }`
-- objects with fields like `frequency`, `count`, `fpm`, `lg10WF`, or `zipf`
+- 直接的 `{ word: score }` maps
+- 类似 `{ word, zipf }` 的 objects arrays
+- 带有 `frequency`, `count`, `fpm`, `lg10WF` 或 `zipf` 等 fields 的 objects
 
-## Getting started
+## 开始使用
 
 ### Local Node workflow
 
@@ -65,4 +65,3 @@ docker compose up --build
 ```bash
 docker compose -f docker-compose.test.yml up --build --exit-code-from frontend_test
 ```
-
