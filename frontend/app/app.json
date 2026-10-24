@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "essay_subtrex_analysis",
-    "slug": "essay_subtrex_analysis",
+    "name": "essay-subtrex-analysis",
+    "slug": "essay-subtrex-analysis",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -23,7 +23,7 @@
       "edgeToEdgeEnabled": true
     },
     "experiments": {
-      "baseUrl": "/essay_subtrex_analysis"
+      "baseUrl": "/essay-subtrex-analysis"
     },
     "web": {
       "favicon": "./assets/favicon.png",

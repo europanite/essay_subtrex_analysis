@@ -39,7 +39,7 @@ jobs:
           <?xml version="1.0" encoding="UTF-8"?>
           <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
             <url>
-              <loc>https://europanite.github.io/essay_subtrex_analysis/</loc>
+              <loc>https://europanite.github.io/essay-subtrex-analysis/</loc>
               <lastmod>${LASTMOD}</lastmod>
             </url>
           </urlset>
